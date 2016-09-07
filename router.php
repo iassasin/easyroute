@@ -38,8 +38,6 @@ class Route {
 					if (preg_match($this->filters[$arg], $path[$i]) !== 1){
 						return false;
 					}
-				} else {
-				
 				}
 				
 				if ($arg == 'controller' || $arg == 'action'){
