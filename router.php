@@ -92,6 +92,7 @@ class Route {
 class Router {
 	private $ctl_path = './';
 	private $routes = [];
+	private $handler404 = null;
 	
 	public function __construct(){
 		
@@ -99,6 +100,12 @@ class Router {
 	
 	public function setControllersPath($path){
 		$this->ctl_path = $path;
+	}
+	
+	public function setHandler404($func){
+		if (is_callable($func)){
+			$this->handler404 = $func;
+		}
 	}
 	
 	public function addRoutes(array $routes){
@@ -125,8 +132,12 @@ class Router {
 			}
 		}
 		
-		header($_SERVER['SERVER_PROTOCOL'].' 404 Not Found');
-		echo '<html><body><h1>404 Not Found</h1> The requested url "<i>'.htmlspecialchars($spath).'</i>" not found!';
+		if ($this->handler404 !== null){
+			($this->handler404)($spath);
+		} else {
+			header($_SERVER['SERVER_PROTOCOL'].' 404 Not Found');
+			echo '<html><body><h1>404 Not Found</h1> The requested url "<i>'.htmlspecialchars($spath).'</i>" not found!';
+		}
 	}
 	
 	private function loadController($controller){

@@ -30,3 +30,11 @@
 			['controller' => 'home', 'action' => 'index'],
 			['arg' => '/^\d+$/'] //в arg могут быть только цифры
 		)
+
+А также свой обработчик ошибки 404:
+
+		$router->setHandler404(function($path){
+			header($_SERVER['SERVER_PROTOCOL'].' 404 Not Found');
+			echo '<html><body><h1>404 Not Found</h1> The requested url "<i>'.htmlspecialchars($path).'</i>" not found!';
+		});
+
