@@ -2,7 +2,12 @@
 
 Для использования нужно выполнить всего 3 простых шага:
 
-1. Скачать ядро маршрутизатора: `router.php`
+1. Скачать ядро маршрутизатора: `router.php`, и настроить перенаправление в `.htaccess` всех запросов на него, кроме статических ресурсов (`assets`):
+
+		RewriteEngine On
+		RewriteCond %{REQUEST_URI} !^/assets/
+		RewriteRule ^(.*)$ routes.php?url=$1 [B,QSA,L]
+
 2. Настроить маршруты:
 
 		require_once 'router.php';
