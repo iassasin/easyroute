@@ -3,8 +3,9 @@
 class Route {
 	private $path;
 	private $defaults;
+	private $filters;
 	
-	public function __construct($path, array $defaults = []){
+	public function __construct($path, array $defaults = [], array $filters = []){
 		$apath = explode('/', $path);
 		if ($apath[0] == ''){
 			array_shift($apath);
@@ -12,6 +13,7 @@ class Route {
 		
 		$this->path = $apath;
 		$this->defaults = $defaults;
+		$this->filters = $filters;
 	}
 	
 	public function match(array $path){
@@ -31,6 +33,14 @@ class Route {
 		for ($i = 0; $i < $pcnt; ++$i){
 			if ($this->path[$i]{0} == '{'){
 				$arg = substr($this->path[$i], 1, -1);
+				
+				if (array_key_exists($arg, $this->filters)){
+					if (preg_match($this->filters[$arg], $path[$i]) !== 1){
+						return false;
+					}
+				} else {
+				
+				}
 				
 				if ($arg == 'controller' || $arg == 'action'){
 					$res[$arg] = $path[$i];
@@ -68,7 +78,7 @@ class Route {
 		}
 		
 		foreach (['controller', 'action'] as $arg){
-			if ($res[$arg] === null){
+			if ($res[$arg] == ''){
 				if (!array_key_exists($arg, $this->defaults)){
 					return false;
 				}
@@ -99,9 +109,6 @@ class Router {
 	
 	public function processRoute($spath){
 		$path = explode('/', $spath);
-		if ($path[0] == ''){
-			array_shift($path);
-		}
 		
 		foreach ($this->routes as $r){
 			if ($ctl = $r->match($path)){
