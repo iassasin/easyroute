@@ -5,10 +5,10 @@
 1. Скачать ядро маршрутизатора: `router.php`
 2. Настроить маршруты:
 
-		require_once '../res/dt/router.php';
+		require_once 'router.php';
 
 		$router = new Router();
-		$router->setControllersPath($_SERVER['DOCUMENT_ROOT'].'/routes/controllers/');
+		$router->setControllersPath($_SERVER['DOCUMENT_ROOT'].'/controllers/');
 		$router->addRoutes([
 			new Route('/{controller}/{action}/{arg}', ['controller' => 'home', 'action' => 'index', 'arg' => null]),
 		]);
@@ -16,7 +16,7 @@
 
 3. Создать контроллер в `controllers/home.php`:
 
-		class home {
+		class ControllerHome {
 			public function index($arg){
 				echo '<html><body>Home page! '.($arg !== null ? 'Argument: '.$arg : 'Argument not set').'</body></html>';
 			}
@@ -31,10 +31,15 @@
 			['arg' => '/^\d+$/'] //в arg могут быть только цифры
 		)
 
-А также свой обработчик ошибки 404:
+Свой обработчик ошибки 404:
 
 		$router->setHandler404(function($path){
 			header($_SERVER['SERVER_PROTOCOL'].' 404 Not Found');
 			echo '<html><body><h1>404 Not Found</h1> The requested url "<i>'.htmlspecialchars($path).'</i>" not found!';
 		});
+
+А также любой префикс имени класса контроллера:
+
+		$router->setControllerClassPrefix('TheController');
+		
 

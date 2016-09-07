@@ -93,6 +93,7 @@ class Router {
 	private $ctl_path = './';
 	private $routes = [];
 	private $handler404 = null;
+	private $ctl_prefix = 'Controller';
 	
 	public function __construct(){
 		
@@ -106,6 +107,10 @@ class Router {
 		if (is_callable($func)){
 			$this->handler404 = $func;
 		}
+	}
+	
+	public function setControllerClassPrefix($pref){
+		$this->ctl_prefix = $pref;
 	}
 	
 	public function addRoutes(array $routes){
@@ -146,14 +151,16 @@ class Router {
 		}
 		
 		$cp = $this->ctl_path.$controller.'.php';
+		$cn = $this->ctl_prefix.$controller;
+		
 		if (!file_exists($cp)){
 			return null;
 		}
 		
 		include_once $cp;
 		
-		if (class_exists($controller, false)){
-			$obj = new $controller;
+		if (class_exists($cn, false)){
+			$obj = new $cn;
 			return $obj;
 		}
 		
