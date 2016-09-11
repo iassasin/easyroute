@@ -60,14 +60,14 @@ class Route {
 			}
 		}
 		
-		foreach (['controller', 'action'] as $arg){
-			if ($res[$arg] == ''){
-				if (!array_key_exists($arg, $this->defaults)){
-					return false;
-				}
-				
-				$res[$arg] = $this->defaults[$arg];
+		foreach ($this->defaults as $defk => $defv){
+			if (!array_key_exists($defk, $res) || $res[$defk] == ''){
+				$res[$defk] = $defv;
 			}
+		}
+		
+		if ($res['controller'] == '' || $res['action'] == ''){
+			return false;
 		}
 		
 		return $res;
