@@ -20,7 +20,6 @@ class Route {
 		$res = [
 			'controller' => null,
 			'action' => null,
-			'args' => [],
 		];
 		
 		$pcnt = count($path);
@@ -40,14 +39,7 @@ class Route {
 					}
 				}
 				
-				if ($arg == 'controller' || $arg == 'action'){
-					$res[$arg] = $path[$i];
-				} else {
-					$res['args'][] = [
-						'name' => $arg,
-						'value' => $path[$i],
-					];
-				}
+				$res[$arg] = $path[$i];
 			} else if ($this->path[$i] != $path[$i]){
 				return false;
 			}
@@ -64,14 +56,7 @@ class Route {
 					return false;
 				}
 				
-				if ($arg == 'controller' || $arg == 'action'){
-					$res[$arg] = $this->defaults[$arg];
-				} else {
-					$res['args'][] = [
-						'name' => $arg,
-						'value' => $this->defaults[$arg],
-					];
-				}
+				$res[$arg] = $this->defaults[$arg];
 			}
 		}
 		
@@ -117,6 +102,16 @@ class Router {
 		$this->routes = $routes;
 	}
 	
+	private function createArgsFor($obj, $method, $values){
+		$f = new ReflectionMethod($obj, $method);
+		$res = array_fill(0, count($f), null);
+		foreach ($f->getParameters() as $p){
+			if (array_key_exists($p->name, $values))
+				$res[$p->getPosition()] = $values[$p->name];
+		}
+		return $res;
+	}
+	
 	public function processRoute($spath){
 		$path = explode('/', $spath);
 		
@@ -124,13 +119,7 @@ class Router {
 			if ($ctl = $r->match($path)){
 				$obj = $this->loadController($ctl['controller']);
 				if ($obj !== null && method_exists($obj, $ctl['action'])){
-					$args = [];
-					foreach ($ctl['args'] as $arg){
-						$args[] = $arg['value'];
-					}
-					
-					call_user_func_array([$obj, $ctl['action']], $args);
-					
+					call_user_func_array([$obj, $ctl['action']], $this->createArgsFor($obj, $ctl['action'], $ctl));
 					return;
 				}
 				break;
