@@ -17,10 +17,9 @@ class Route {
 	}
 	
 	public function match(array $path){
-		$res = [
-			'controller' => null,
-			'action' => null,
-		];
+		$res = $this->defaults;
+		if (!array_key_exists('controller', $res)) $res['controller'] = null;
+		if (!array_key_exists('action', $res)) $res['action'] = null;
 		
 		$pcnt = count($path);
 		$rcnt = count($this->path);
@@ -30,7 +29,7 @@ class Route {
 		}
 		
 		for ($i = 0; $i < $pcnt; ++$i){
-			if ($this->path[$i]{0} == '{'){
+			if (strlen($this->path[$i]) > 0 && $this->path[$i]{0} == '{'){
 				$arg = substr($this->path[$i], 1, -1);
 				
 				if (array_key_exists($arg, $this->filters)){
@@ -39,7 +38,9 @@ class Route {
 					}
 				}
 				
-				$res[$arg] = $path[$i];
+				if ($path[$i] != ''){
+					$res[$arg] = $path[$i];
+				}
 			} else if ($this->path[$i] != $path[$i]){
 				return false;
 			}
@@ -47,22 +48,14 @@ class Route {
 		
 		if ($i < $rcnt){
 			for ( ; $i < $rcnt; ++$i){
-				if ($this->path[$i]{0} != '{'){
+				if (strlen($this->path[$i]) > 0 && $this->path[$i]{0} != '{'){
 					return false;
 				}
 				
 				$arg = substr($this->path[$i], 1, -1);
-				if (!array_key_exists($arg, $this->defaults)){
+				if (!array_key_exists($arg, $res)){
 					return false;
 				}
-				
-				$res[$arg] = $this->defaults[$arg];
-			}
-		}
-		
-		foreach ($this->defaults as $defk => $defv){
-			if (!array_key_exists($defk, $res) || $res[$defk] == ''){
-				$res[$defk] = $defv;
 			}
 		}
 		
