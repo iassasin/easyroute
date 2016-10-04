@@ -112,8 +112,10 @@ class Router {
 			if ($ctl = $r->match($path)){
 				$obj = $this->loadController($ctl['controller']);
 				if ($obj !== null && method_exists($obj, $ctl['action'])){
-					call_user_func_array([$obj, $ctl['action']], $this->createArgsFor($obj, $ctl['action'], $ctl));
-					return;
+					if (is_callable([$obj, $ctl['action']])){
+						call_user_func_array([$obj, $ctl['action']], $this->createArgsFor($obj, $ctl['action'], $ctl));
+						return;
+					}
 				}
 				break;
 			}
