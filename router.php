@@ -5,6 +5,7 @@ class Route {
 	private $defaults;
 	private $filters;
 	private $ctl_subpath;
+	private $route_filter;
 
 	public function __construct($path, array $defaults = [], array $filters = []){
 		$apath = explode('/', $path);
@@ -16,6 +17,7 @@ class Route {
 		$this->defaults = $defaults;
 		$this->filters = $filters;
 		$this->ctl_subpath = '';
+		$this->route_filter = null;
 	}
 
 	public function setControllersSubpath($path){
@@ -23,8 +25,17 @@ class Route {
 		return $this;
 	}
 
+	public function setFilter(RouteFilter $filter){
+		$this->route_filter = $filter;
+		return $this;
+	}
+
 	public function getControllersSubpath(){
 		return $this->ctl_subpath;
+	}
+
+	public function getFilter(){
+		return $this->route_filter;
 	}
 
 	public function match(array $path){
@@ -79,6 +90,9 @@ class Route {
 }
 
 class Router {
+	const CONTINUE = 0;
+	const COMPLETED = 1;
+
 	private $ctl_path = './';
 	private $routes = [];
 	private $handler404 = null;
@@ -120,10 +134,18 @@ class Router {
 		$path = explode('/', $spath);
 
 		foreach ($this->routes as $r){
+			$filter = $r->getFilter();
 			if ($ctl = $r->match($path)){
 				$obj = $this->loadController($r->getControllersSubpath(), $ctl['controller']);
 				if ($obj !== null && method_exists($obj, $ctl['action'])){
 					if (is_callable([$obj, $ctl['action']])){
+						if ($filter){
+							$res = $filter->preRoute($spath, $obj, $ctl['action'], $ctl);
+							if ($res == self::COMPLETED){
+								return;
+							}
+						}
+
 						call_user_func_array([$obj, $ctl['action']], $this->createArgsFor($obj, $ctl['action'], $ctl));
 						return;
 					}
@@ -154,7 +176,7 @@ class Router {
 		if (!file_exists($cp)){
 			return null;
 		}
-		
+
 		include_once $cp;
 
 		if (class_exists($cn, false)){
@@ -163,5 +185,11 @@ class Router {
 		}
 
 		return null;
+	}
+}
+
+class RouteFilter {
+	public function preRoute($path, $controller, $action, $args){
+		return Router::CONTINUE;
 	}
 }
