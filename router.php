@@ -8,7 +8,7 @@ class Route {
 	private $route_filter;
 
 	public function __construct($path, array $defaults = [], array $filters = []){
-		$apath = explode('/', $path);
+		$apath = preg_split('/\/+/', $path);
 		if ($apath[0] == ''){
 			array_shift($apath);
 		}
@@ -60,9 +60,11 @@ class Route {
 					}
 				}
 
-				if ($path[$i] != ''){
-					$res[$arg] = $path[$i];
+				if ($path[$i] == ''){
+					break;
 				}
+
+				$res[$arg] = $path[$i];
 			} else if ($this->path[$i] != $path[$i]){
 				return false;
 			}
@@ -131,7 +133,7 @@ class Router {
 	}
 
 	public function processRoute($spath){
-		$path = explode('/', $spath);
+		$path = preg_split('/\/+/', $spath);
 
 		foreach ($this->routes as $r){
 			$filter = $r->getFilter();
