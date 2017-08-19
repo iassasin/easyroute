@@ -1,6 +1,9 @@
 <?php
 
-require_once '../router.php';
+require_once '../vendor/autoload.php';
+
+use Iassasin\Easyroute\Router;
+use Iassasin\Easyroute\Route;
 
 $router = new Router();
 $router->setControllersPath($_SERVER['DOCUMENT_ROOT'].'/controllers/');

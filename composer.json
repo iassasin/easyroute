@@ -1,0 +1,25 @@
+{
+    "name": "iassasin/easyroute",
+    "description": "Very lightweight and simple router for PHP",
+    "homepage": "https://github.com/iassasin/easyroute",
+    "keywords": ["route", "router", "controller", "mvc"],
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "iassasin",
+            "email": "iassasin@yandex.ru"
+        }
+    ],
+    "require": {
+        "php": ">=5.6"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^5.7"
+    },
+    "autoload": {
+        "psr-4": {
+            "Iassasin\\Easyroute\\": "src"
+        }
+    }
+}

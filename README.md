@@ -1,19 +1,19 @@
 Простой маршрутизатор, не требующий кучи настроек, устанавливается за 5 минут и просто работает.
 
-Для использования нужно выполнить всего 3 простых шага:
+Для использования нужно выполнить всего 4 простых шага:
 
-1. Скачать ядро маршрутизатора: `router.php`, и настроить перенаправление в `.htaccess` всех запросов на него, кроме статических ресурсов (`assets`):
+1. Установить easyroute через composer:
 
 ```
-RewriteEngine On
-RewriteCond %{REQUEST_URI} !^/assets/
-RewriteRule ^(.*)$ routes.php?url=$1 [B,QSA,L]
+composer require iassasin/easyroute
 ```
 
-2. Настроить маршруты:
+2. Настроить маршруты в корневой папке сайта в файле `routes.php`:
 
 ```php
-require_once 'router.php';
+require_once 'vendor/autoload.php';
+use Iassasin\Easyroute\Router;
+use Iassasin\Easyroute\Route;
 
 $router = new Router();
 $router->setControllersPath($_SERVER['DOCUMENT_ROOT'].'/controllers/');
@@ -23,7 +23,15 @@ $router->addRoutes([
 $router->processRoute($_GET['url']);
 ```
 
-3. Создать контроллер в `controllers/home.php`:
+3. Настроить перенаправление в `.htaccess` всех запросов на него, кроме статических ресурсов (`assets`):
+
+```
+RewriteEngine On
+RewriteCond %{REQUEST_URI} !^/assets/
+RewriteRule ^(.*)$ routes.php?url=$1 [B,QSA,L]
+```
+
+4. Создать контроллер в `controllers/home.php`:
 
 ```php
 class ControllerHome {
@@ -33,7 +41,7 @@ class ControllerHome {
 }
 ```
 
-Все! Пользуйтесь на здоровье!
+Все! Приятного использования!
 
 Если требуется более тонкая настройка маршрутов, можно использовать фильтры для аргументов (используются регулярные выражения):
 
@@ -54,6 +62,8 @@ new Route('/{arg}',
 Фильтр доступа к маршруту:
 
 ```php
+use Iassasin\Easyroute\RouteFilter;
+
 class RouteFilterAdmin extends RouteFilter {
 	public function preRoute($path, $controller, $action, $args){
 		if (!isCurrentUserAdmin()){
