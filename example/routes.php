@@ -1,6 +1,6 @@
 <?php
 
-require_once 'router.php';
+require_once '../router.php';
 
 $router = new Router();
 $router->setControllersPath($_SERVER['DOCUMENT_ROOT'].'/controllers/');
