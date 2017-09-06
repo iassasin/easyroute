@@ -44,7 +44,7 @@ class Router {
 	}
 
 	public function processRoute($spath){
-		$path = preg_split('/\/+/', $spath);
+		$path = Route::splitPathFromURI($spath);
 
 		foreach ($this->routes as $r){
 			$filter = $r->getFilter();

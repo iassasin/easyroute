@@ -55,6 +55,16 @@ class RouterTest extends PHPUnit_Framework_TestCase {
 		$this->_test($router, 'bar/index/var', 'bar/index: var');
 	}
 
+	public function testEscapeSymbolsAndGetParams(){
+		$router = $this->_initRouter([
+			new Route('/test/test', ['controller' => 'foo', 'action' => 'test']),
+			new Route('/{controller}/{action}/{arg}', ['controller' => 'foo', 'action' => 'index', 'arg' => null]),
+		]);
+
+		$this->_test($router, 'bar/index/var%20%2F%20rav', 'bar/index: var / rav');
+		$this->_test($router, 'bar/index/var%20%2F%20rav?var=123&ff=321', 'bar/index: var / rav');
+	}
+
 	public function testRegexRoute(){
 		$router = $this->_initRouter([
 			new Route('/test/{arg}', ['controller' => 'bar', 'action' => 'index'],

@@ -9,8 +9,22 @@ class Route {
 	private $ctl_subpath;
 	private $route_filter;
 
-	public function __construct($path, array $defaults = [], array $filters = []){
+	public static function splitPathFromURI($path){
+		$argspos = strpos($path, '?');
+		if ($argspos !== false){
+			$path = substr($path, 0, $argspos);
+		}
+
 		$apath = preg_split('/\/+/', $path);
+		foreach ($apath as &$p){
+			$p = urldecode($p);
+		}
+
+		return $apath;
+	}
+
+	public function __construct($path, array $defaults = [], array $filters = []){
+		$apath = self::splitPathFromURI($path);
 		if ($apath[0] == ''){
 			array_shift($apath);
 		}
