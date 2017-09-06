@@ -10,6 +10,14 @@ class Route {
 	private $route_filter;
 
 	public static function splitPathFromURI($path){
+		if ($path === ''){
+			return [];
+		}
+
+		if ($path{0} == '/'){
+			$path = substr($path, 1);
+		}
+
 		$argspos = strpos($path, '?');
 		if ($argspos !== false){
 			$path = substr($path, 0, $argspos);
