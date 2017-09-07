@@ -11,7 +11,7 @@ class Route {
 
 	public static function splitPathFromURI($path){
 		if ($path === ''){
-			return [];
+			return [''];
 		}
 
 		if ($path{0} == '/'){
@@ -33,9 +33,6 @@ class Route {
 
 	public function __construct($path, array $defaults = [], array $filters = []){
 		$apath = self::splitPathFromURI($path);
-		if ($apath[0] == ''){
-			array_shift($apath);
-		}
 
 		$this->path = $apath;
 		$this->defaults = $defaults;

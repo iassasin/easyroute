@@ -34,6 +34,22 @@ class RouterTest extends PHPUnit_Framework_TestCase {
 		return $router;
 	}
 
+	public function testStaticRoutes(){
+		$router = $this->_initRouter([
+			new Route('/', ['controller' => 'foo', 'action' => 'index', 'arg' => null]),
+		]);
+
+		$this->_test($router, '', 'foo/index: ');
+		$this->_test($router, '/', 'foo/index: ');
+
+		$router = $this->_initRouter([
+			new Route('/test/test', ['controller' => 'foo', 'action' => 'test']),
+		]);
+
+		$this->_test($router, 'test/test', 'foo/test');
+		$this->_test($router, '/test/test', 'foo/test');
+	}
+
 	public function testBasicRoutes(){
 		$router = $this->_initRouter([
 			new Route('/test/test', ['controller' => 'foo', 'action' => 'test']),
@@ -45,8 +61,11 @@ class RouterTest extends PHPUnit_Framework_TestCase {
 		$this->_test($router, 'foo/test/test', 'foo/test');
 
 		$this->_test($router, '', 'foo/index: ');
+		$this->_test($router, '/', 'foo/index: ');
 		$this->_test($router, 'foo', 'foo/index: ');
 		$this->_test($router, 'foo/', 'foo/index: ');
+		$this->_test($router, '/foo', 'foo/index: ');
+		$this->_test($router, '/foo/', 'foo/index: ');
 		$this->_test($router, 'foo/index/', 'foo/index: ');
 		$this->_test($router, 'foo/index/var', 'foo/index: var');
 
