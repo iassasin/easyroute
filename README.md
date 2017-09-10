@@ -20,7 +20,7 @@ $router->setControllersPath($_SERVER['DOCUMENT_ROOT'].'/controllers/');
 $router->addRoutes([
 	new Route('/{controller}/{action}/{arg}', ['controller' => 'home', 'action' => 'index', 'arg' => null]),
 ]);
-$router->processRoute($_GET['url']);
+$router->processRoute($_SERVER['REQUEST_URI']);
 ```
 
 3. Настроить перенаправление в `.htaccess` всех запросов на него, кроме статических ресурсов (`assets`):
@@ -28,7 +28,7 @@ $router->processRoute($_GET['url']);
 ```
 RewriteEngine On
 RewriteCond %{REQUEST_URI} !^/assets/
-RewriteRule ^(.*)$ routes.php?url=$1 [B,QSA,L]
+RewriteRule ^(.*)$ routes.php [B,QSA,L]
 ```
 
 4. Создать контроллер в `controllers/home.php`:
