@@ -2,6 +2,9 @@
 
 namespace Iassasin\Easyroute;
 
+use Iassasin\Easyroute\Http\Request;
+use Psr\Container\ContainerInterface;
+
 class Router {
 	const CONTINUE = 0;
 	const COMPLETED = 1;
@@ -10,9 +13,10 @@ class Router {
 	private $routes = [];
 	private $handler404 = null;
 	private $ctl_prefix = 'Controller';
+	private $container;
 
 	public function __construct(){
-
+		$this->container = new SimpleContainer();
 	}
 
 	public function setControllersPath($path){
@@ -29,6 +33,18 @@ class Router {
 		$this->ctl_prefix = $pref;
 	}
 
+	/**
+	 * Get dependency injection container
+	 * @return ContainerInterface
+	 */
+	public function getContainer(){
+		return $this->container;
+	}
+
+	public function setContainer(ContainerInterface $container){
+		$this->container = $container;
+	}
+
 	public function addRoutes(array $routes){
 		$this->routes = $routes;
 	}
@@ -37,13 +53,27 @@ class Router {
 		$f = new \ReflectionMethod($obj, $method);
 		$res = array_fill(0, count($f), null);
 		foreach ($f->getParameters() as $p){
-			if (array_key_exists($p->name, $values))
+			if (array_key_exists($p->name, $values)){
 				$res[$p->getPosition()] = $values[$p->name];
+			}
+			else if ($p->getClass() != null){
+				//$p->isBuiltin not exists in PHP 5.6
+				$res[$p->getPosition()] = $this->container->get($p->getClass()->name);
+			}
 		}
 		return $res;
 	}
 
-	public function processRoute($spath){
+	public function processRoute(Request $req = null){
+		if ($req === null){
+			$req = Request::createFromGlobals();
+		}
+
+		if ($this->container instanceof SimpleContainer){
+			$this->container->setService(Request::class, $req);
+		}
+
+		$spath = $req->getUri();
 		$path = Route::splitPathFromURI($spath);
 
 		foreach ($this->routes as $r){

@@ -8,18 +8,65 @@
 use Iassasin\Easyroute\Router;
 use Iassasin\Easyroute\Route;
 use Iassasin\Easyroute\RouteFilter;
+use Iassasin\Easyroute\Http\Request;
+use Iassasin\Easyroute\SimpleContainer;
+use Iassasin\Easyroute\ServiceNotFoundException;
+use Psr\Container\ContainerInterface;
 
 /**
  * @covers \Iassasin\Easyroute\Router
  * @covers \Iassasin\Easyroute\Route
  * @covers \Iassasin\Easyroute\RouteFilter
+ * @covers \Iassasin\Easyroute\Http\Request
+ * @covers \Iassasin\Easyroute\Http\Parameters
+ * @covers \Iassasin\Easyroute\SimpleContainer
+ * @covers \Iassasin\Easyroute\ServiceNotFoundException
  */
 class RouterTest extends PHPUnit_Framework_TestCase {
-	private function _test($router, $route, $expected){
+	private function _test(Router $router, $route, $expected){
 		ob_start();
-		$router->processRoute($route);
-		$out = ob_get_clean();
-		$this->assertEquals($expected, $out);
+		try {
+			$router->processRoute(new Request(
+				[], // query
+				[], // request
+				[], // attributes
+				[], // cookies
+				[], // files
+				[ // server
+					'REQUEST_URI' => $route,
+				],
+				'' // content
+			));
+			$out = ob_get_clean();
+			$this->assertEquals($expected, $out);
+		} catch (\Exception $e){
+			ob_get_clean();
+			throw $e;
+		}
+	}
+
+	private function _testWithDI(Router $router, $route, $expected){
+		ob_start();
+		try {
+			$req = new Request(
+				[], // query
+				[], // request
+				[], // attributes
+				[], // cookies
+				[], // files
+				[ // server
+					'REQUEST_URI' => $route,
+				],
+				'' // content
+			);
+			$router->setContainer(new ExternalContainer($req));
+			$router->processRoute($req);
+			$out = ob_get_clean();
+			$this->assertEquals($expected, $out);
+		} catch (\Exception $e){
+			ob_get_clean();
+			throw $e;
+		}
 	}
 
 	private function _initRouter($routes){
@@ -120,6 +167,42 @@ class RouterTest extends PHPUnit_Framework_TestCase {
 		$this->_test($router, 'zone/zbar/test', 'test denied');
 		$this->_test($router, 'zone/invalid/test', '404: zone/invalid/test');
 	}
+
+	public function testDIContainerServiceNotFound(){
+		$router = $this->_initRouter([
+			new Route('/{controller}/{action}/{arg}', []),
+			new Route('/{controller}/{action}', []),
+		]);
+
+		$this->expectException(ServiceNotFoundException::class);
+		$this->_test($router, 'di/req6/abc', 'di/req4: abc, uri: di/req4/abc');
+	}
+
+	public function testDIContainer(){
+		$router = $this->_initRouter([
+			new Route('/{controller}/{action}/{arg}', []),
+			new Route('/{controller}/{action}', []),
+		]);
+
+		$this->_makeDITests($router, [$this, '_test']);
+	}
+
+	public function testExternalDIContainer(){
+		$router = $this->_initRouter([
+			new Route('/{controller}/{action}/{arg}', []),
+			new Route('/{controller}/{action}', []),
+		]);
+
+		$this->_makeDITests($router, [$this, '_testWithDI']);
+	}
+
+	private function _makeDITests($router, $tester){
+		$tester($router, 'di/req1', 'di/req1');
+		$tester($router, 'di/req2/123', 'di/req2: 123');
+		$tester($router, 'di/req3', 'di/req3: uri: di/req3');
+		$tester($router, 'di/req4/abc', 'di/req4: abc, uri: di/req4/abc');
+		$tester($router, 'di/req5/abc', 'di/req5: abc, uri: di/req5/abc');
+	}
 }
 
 class NoTestFilter extends RouteFilter {
@@ -130,5 +213,24 @@ class NoTestFilter extends RouteFilter {
 		}
 
 		return Router::CONTINUE;
+	}
+}
+
+class ExternalContainer implements ContainerInterface {
+	private $request;
+
+	public function __construct(Request $req){
+		$this->request = $req;
+	}
+
+	public function get($id){
+		if ($id == Request::class)
+			return $this->request;
+
+		throw new ServiceNotFoundException();
+	}
+
+	public function has($id){
+		return $id == Request::class;
 	}
 }
