@@ -11,6 +11,7 @@ use Iassasin\Easyroute\RouteFilter;
 use Iassasin\Easyroute\Http\Request;
 use Iassasin\Easyroute\SimpleContainer;
 use Iassasin\Easyroute\ServiceNotFoundException;
+use Iassasin\Easyroute\Http\Response;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -21,6 +22,7 @@ use Psr\Container\ContainerInterface;
  * @covers \Iassasin\Easyroute\Http\Parameters
  * @covers \Iassasin\Easyroute\SimpleContainer
  * @covers \Iassasin\Easyroute\ServiceNotFoundException
+ * @covers \Iassasin\Easyroute\Http\Response
  */
 class RouterTest extends PHPUnit_Framework_TestCase {
 	private function _test(Router $router, $route, $expected){

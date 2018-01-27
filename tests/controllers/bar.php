@@ -6,6 +6,6 @@ class ControllerBar {
 	}
 
 	public function test(){
-		echo 'bar/test';
+		return 'bar/test';
 	}
 }

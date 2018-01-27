@@ -3,6 +3,7 @@
 namespace Iassasin\Easyroute;
 
 use Iassasin\Easyroute\Http\Request;
+use Iassasin\Easyroute\Http\Response;
 use Psr\Container\ContainerInterface;
 
 class Router {
@@ -90,7 +91,15 @@ class Router {
 							}
 						}
 
-						call_user_func_array([$obj, $ctl['action']], $this->createArgsFor($obj, $ctl['action'], $ctl));
+						$resp = call_user_func_array([$obj, $ctl['action']], $this->createArgsFor($obj, $ctl['action'], $ctl));
+						if ($resp !== null){
+							if (!($resp instanceof Response)){
+								$resp = new Response($resp);
+							}
+
+							$resp->send();
+						}
+
 						return;
 					}
 				}

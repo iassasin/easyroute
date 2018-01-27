@@ -6,6 +6,6 @@ class ControllerFoo {
 	}
 
 	public function test(){
-		echo 'foo/test';
+		return 'foo/test';
 	}
 }
