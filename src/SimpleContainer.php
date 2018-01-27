@@ -59,7 +59,7 @@ class SimpleContainer implements \Psr\Container\ContainerInterface {
 		$ctor = $class->getConstructor();
 
 		if ($ctor === null){
-			return new $id();
+			return $class->newInstance();
 		}
 
 		$params = $ctor->getParameters();
@@ -73,6 +73,6 @@ class SimpleContainer implements \Psr\Container\ContainerInterface {
 			$args[$param->getPosition()] = $this->get($pclass->name);
 		}
 
-		return $ctor->invokeArgs(null, $args);
+		return $class->newInstanceArgs($args);
 	}
 }

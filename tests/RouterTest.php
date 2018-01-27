@@ -175,7 +175,7 @@ class RouterTest extends PHPUnit_Framework_TestCase {
 		]);
 
 		$this->expectException(ServiceNotFoundException::class);
-		$this->_test($router, 'di/req6/abc', 'di/req4: abc, uri: di/req4/abc');
+		$this->_test($router, 'di/req6/abc', 'di/req6');
 	}
 
 	public function testDIContainer(){
@@ -185,6 +185,7 @@ class RouterTest extends PHPUnit_Framework_TestCase {
 		]);
 
 		$this->_makeDITests($router, [$this, '_test']);
+		$this->_test($router, 'di/req7/abc', 'di/req7: abc, s2s1, s1');
 	}
 
 	public function testExternalDIContainer(){
@@ -194,6 +195,19 @@ class RouterTest extends PHPUnit_Framework_TestCase {
 		]);
 
 		$this->_makeDITests($router, [$this, '_testWithDI']);
+	}
+
+	public function testNoAutowireContainer(){
+		$router = $this->_initRouter([
+			new Route('/{controller}/{action}/{arg}', []),
+			new Route('/{controller}/{action}', []),
+		]);
+		$router->getContainer()->setAutowireEnabled(false);
+
+		$this->_makeDITests($router, [$this, '_test']);
+
+		$this->expectException(ServiceNotFoundException::class);
+		$this->_test($router, 'di/req7/abc', 'di/req7: abc, s2s1, s1');
 	}
 
 	private function _makeDITests($router, $tester){
