@@ -1,14 +1,17 @@
-Простой маршрутизатор, не требующий кучи настроек, устанавливается за 5 минут и просто работает.
+# Easyroute
+Simple router do not require a lot of setups, install in few minutes and just works.
 
-Для использования нужно выполнить всего 4 простых шага:
+## Installation
 
-1. Установить easyroute через composer:
+To start using router complete 4 simple steps:
+
+1. Install `easyroute` via composer:
 
 ```
 composer require iassasin/easyroute
 ```
 
-2. Настроить маршруты в корневой папке сайта в файле `routes.php`:
+2. Setup yours routes in root directory of project. For example in file `routes.php`:
 
 ```php
 require_once 'vendor/autoload.php';
@@ -20,10 +23,10 @@ $router->setControllersPath($_SERVER['DOCUMENT_ROOT'].'/controllers/');
 $router->addRoutes([
 	new Route('/{controller}/{action}/{arg}', ['controller' => 'home', 'action' => 'index', 'arg' => null]),
 ]);
-$router->processRoute($_SERVER['REQUEST_URI']);
+$router->processRoute();
 ```
 
-3. Настроить перенаправление в `.htaccess` всех запросов на него, кроме статических ресурсов (`assets`):
+3. Tell web server redirect all requests (except static `assets/`) to router via `.htaccess`:
 
 ```
 RewriteEngine On
@@ -31,7 +34,7 @@ RewriteCond %{REQUEST_URI} !^/assets/
 RewriteRule ^(.*)$ routes.php [B,QSA,L]
 ```
 
-4. Создать контроллер в `controllers/home.php`:
+4. Create first controller in `controllers/home.php`:
 
 ```php
 class ControllerHome {
@@ -41,25 +44,31 @@ class ControllerHome {
 }
 ```
 
-Все! Приятного использования!
+That's it!
 
-Если требуется более тонкая настройка маршрутов, можно использовать фильтры для аргументов (используются регулярные выражения):
+Note that file name must match `{controller}` name from URL template and controller class name must match `{controller}` name with prefix `Controller`. In example above route `/home/index` matches file `controllers/home.php` and class `ControllerHome`.
+
+## Tuning
+
+To filter matching parameters in URL template you can use regular expressions:
 
 ```php
 new Route('/{arg}',
-	['controller' => 'home', 'action' => 'index'],
-	['arg' => '/^\d+$/'] //в arg могут быть только цифры
+	['controller' => 'home', 'action' => 'index'], // default values
+	['arg' => '/^\d+$/'] // arg can contains only numerics
 )
 ```
 
-Подпапки для отдельных зон:
+Separate zones with subdirectories:
 
 ```php
 (new Route('/admin/{controller}/{action}', ['action' => 'index']))
 	->setControllersSubpath('zones/admin')
+	// '/admin/home/index' will match 'controllers/zones/admin/home.php'
+	// and class 'ControllerHome'
 ```
 
-Фильтр доступа к маршруту:
+Use `RouteFilter` to prevent access to some routes:
 
 ```php
 use Iassasin\Easyroute\RouteFilter;
@@ -68,10 +77,10 @@ class RouteFilterAdmin extends RouteFilter {
 	public function preRoute($path, $controller, $action, $args){
 		if (!isCurrentUserAdmin()){
 			echo 'Access denied!';
-			return Router::COMPLETED; //Не вызывать контроллер, маршрут уже обработан
+			return Router::COMPLETED; // Do not call controller's action
 		}
 
-		return Router::CONTINUE; //Вызвать контроллер
+		return Router::CONTINUE; // Call controller's action
 	}
 }
 //...
@@ -79,7 +88,7 @@ class RouteFilterAdmin extends RouteFilter {
 	->setFilter(new RouteFilterAdmin())
 ```
 
-Свой обработчик ошибки 404:
+Set handler for 404 error:
 ```php
 $router->setHandler404(function($path){
 	header($_SERVER['SERVER_PROTOCOL'].' 404 Not Found');
@@ -87,7 +96,7 @@ $router->setHandler404(function($path){
 });
 ```
 
-А также любой префикс имени класса контроллера (стандартный - `Controller`):
+Set custom controller class name prefix (default - `Controller`):
 ```php
 $router->setControllerClassPrefix('TheController');
 ```
