@@ -51,8 +51,9 @@ class Router {
 
 	private function createArgsFor($obj, $method, $values){
 		$f = new \ReflectionMethod($obj, $method);
-		$res = array_fill(0, count($f), null);
-		foreach ($f->getParameters() as $p){
+		$params = $f->getParameters();
+		$res = array_fill(0, count($params), null);
+		foreach ($params as $p){
 			if (array_key_exists($p->name, $values)){
 				$res[$p->getPosition()] = $values[$p->name];
 			}
