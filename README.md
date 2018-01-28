@@ -40,7 +40,8 @@ RewriteRule ^(.*)$ routes.php [B,QSA,L]
 ```php
 class ControllerHome {
 	public function index($arg){
-		echo '<html><body>Home page! '.($arg !== null ? 'Argument: '.$arg : 'Argument not set').'</body></html>';
+		return '<html><body>Home page! '.($arg !== null ? 'Argument: '.$arg : 'Argument not set').'</body></html>';
+		// or use "return new Response('...')" which is more flexible
 	}
 }
 ```
@@ -51,14 +52,14 @@ Note that file name must match `{controller}` name from URL template and control
 
 ## Useful features
 
-### Builtin simple dependency injection container
+### Built-in simple dependency injection container
 
-You can use builtin dependency injection container to split app code into services (which will be loaded via autoload) and simply use it in controller's actions:
+You can use built-in dependency injection container to split app code into services (which will be loaded via autoload) and simply use it in controller's actions:
 
 ```php
 class ControllerHome {
-	public function index($arg, DatabaseService $db, MyService2 $service2){
-
+	public function index($arg, Request $request, DatabaseService $db){
+		// ...
 	}
 }
 ```
@@ -91,8 +92,9 @@ $request = Request::createFromGlobals();
 
 // some implementation of ContainerInterface
 $container = new MyContainer();
-// Router don't know how to register Request service in your container implementation
-// See next section for details
+// Router don't know how to register Request class in your container implementation
+// You should to do it by self if you want to use Request class in controllers
+// See next section for details of Request class
 $container->register(Request::class, $request);
 
 $router->setContainer($container);
@@ -128,7 +130,58 @@ Each field is instance of `Parameters` class and has methods:
 - `getMethod()` - returns `$this->server->get('REQUEST_METHOD')`
 - `getProtocol()` - returns `$this->server->get('SERVER_PROTOCOL')`
 
-## Tuning
+### Response class
+
+`Response` class used to return data to client. Return `Response` instances from controller's actions instead of manual data send using echo or etc.
+
+#### Built-in response classes
+
+There is 3 built-in response classes:
+
+- `Response` - base class for all responses, has methods:
+  - `__construct(string $content, int $statusCode = 200, array $headers = [])`
+  - `getStatusCode()`, `setStatusCode(int $code)` - get/set http status code
+  - `getContent()`, `setContent(string $content)` - get/set http response content
+  - `getHeaders()`, `setHeaders(array $headers)` - get/set http headers
+  - `setHeader(string $name, string $value)` - set single header
+  - `send()` - send response to client, called from handlers
+- `Response404` - extends `Request` for default http 404 error with:
+  - `__construct(string $url, array $headers = [])`
+  - `getUrl()` - get URL caused 404 error
+- `ResponseJson` - extends `Request` for sending json responses, also set correct http `Content-Type` header.
+  - `__construct(object|array $data, int $statusCode = 200, array $headers = [])`
+  - `getData()`, `setData(object|array $data)` - set source data to send to client
+  - Note that `setContent` can't be used and throws `LogicException`
+
+#### Custom handlers for response classes
+
+Set custom handlers for `Response` classes:
+
+```php
+use Iassasin\Easyroute\Http\Responses\Response404;
+
+$router->setResponseHandler(Response404::class, function(Response404 $resp){
+	$resp->setContent('<html><body><h1>Custom 404 Not Found</h1> The requested url "<i>'.htmlspecialchars($resp->getUrl()).'</i>" not found!');
+	$resp->send();
+	return true; // do not call other handlers
+});
+```
+
+And custom handlers for any http status code:
+
+```php
+use Iassasin\Easyroute\Http\Response;
+
+$router->setStatusHandler(302, function(Response $resp){
+	$resp->setContent('You have redirected');
+	$resp->send();
+	return true; // do not call other handlers
+});
+```
+
+> Note 1: you can use both handlers set, but response handlers will be called first (and can stop calling status handlers).
+>
+> Note 2: you can set handler for parent response class to match all childs, child handlers will be always called first: from most child to first parent. So, you can match **all** responses setting handler for `Response::class`.
 
 ### Parameters filter
 
@@ -152,7 +205,7 @@ Separate zones with subdirectories:
 	// and class 'ControllerHome'
 ```
 
-### Filtering access via route
+### Filtering access
 
 Use `RouteFilter` to prevent access to some routes:
 
@@ -162,7 +215,7 @@ use Iassasin\Easyroute\RouteFilter;
 class RouteFilterAdmin extends RouteFilter {
 	public function preRoute($path, $controller, $action, $args){
 		if (!isCurrentUserAdmin()){
-			echo 'Access denied!';
+			new Response('Access denied!', 403)->send();
 			return Router::COMPLETED; // Do not call controller's action
 		}
 
@@ -172,17 +225,6 @@ class RouteFilterAdmin extends RouteFilter {
 //...
 (new Route('/admin/{controller}/{action}', ['action' => 'index']))
 	->setFilter(new RouteFilterAdmin())
-```
-
-### Custom 404 handler
-
-Set handler for 404 error:
-
-```php
-$router->setHandler404(function($path){
-	header($_SERVER['SERVER_PROTOCOL'].' 404 Not Found');
-	echo '<html><body><h1>404 Not Found</h1> The requested url "<i>'.htmlspecialchars($path).'</i>" not found!';
-});
 ```
 
 ### Custom controller class name prefix
