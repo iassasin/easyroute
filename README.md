@@ -215,7 +215,7 @@ use Iassasin\Easyroute\RouteFilter;
 class RouteFilterAdmin extends RouteFilter {
 	public function preRoute($path, $controller, $action, $args){
 		if (!isCurrentUserAdmin()){
-			new Response('Access denied!', 403)->send();
+			(new Response('Access denied!', 403))->send();
 			return Router::COMPLETED; // Do not call controller's action
 		}
 
