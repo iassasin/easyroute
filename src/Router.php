@@ -4,6 +4,7 @@ namespace Iassasin\Easyroute;
 
 use Iassasin\Easyroute\Http\Request;
 use Iassasin\Easyroute\Http\Response;
+use Iassasin\Easyroute\Http\Responses\Response404;
 use Psr\Container\ContainerInterface;
 
 class Router {
@@ -15,6 +16,8 @@ class Router {
 	private $handler404 = null;
 	private $ctl_prefix = 'Controller';
 	private $container;
+	private $statusHandlers = [];
+	private $responseHandlers = [];
 
 	public function __construct(){
 		$this->container = new SimpleContainer();
@@ -24,9 +27,25 @@ class Router {
 		$this->ctl_path = $path;
 	}
 
-	public function setHandler404($func){
+	/**
+	 * Set handler function for status code
+	 * @param int $statusCode
+	 * @param mixed $func function(Response $response)
+	 */
+	public function setStatusHandler($statusCode, $func){
 		if (is_callable($func)){
-			$this->handler404 = $func;
+			$this->statusHandlers[$statusCode] = $func;
+		}
+	}
+
+	/**
+	 * Set handler function for specified response class
+	 * @param string $classFullName
+	 * @param mixed $func function(Response $response)
+	 */
+	public function setResponseHandler($classFullName, $func){
+		if (is_callable($func)){
+			$this->responseHandlers[$classFullName] = $func;
 		}
 	}
 
@@ -84,11 +103,8 @@ class Router {
 				$obj = $this->loadController($r->getControllersSubpath(), $ctl['controller']);
 				if ($obj !== null && method_exists($obj, $ctl['action'])){
 					if (is_callable([$obj, $ctl['action']])){
-						if ($filter){
-							$res = $filter->preRoute($spath, $obj, $ctl['action'], $ctl);
-							if ($res == self::COMPLETED){
-								return;
-							}
+						if ($this->callFilterPreRoute($filter, $spath, $obj, $ctl)){
+							return;
 						}
 
 						$resp = call_user_func_array([$obj, $ctl['action']], $this->createArgsFor($obj, $ctl['action'], $ctl));
@@ -97,7 +113,7 @@ class Router {
 								$resp = new Response($resp);
 							}
 
-							$resp->send();
+							$this->processResponse($resp);
 						}
 
 						return;
@@ -107,12 +123,8 @@ class Router {
 			}
 		}
 
-		if ($this->handler404 !== null){
-			($this->handler404)($spath);
-		} else {
-			header($_SERVER['SERVER_PROTOCOL'].' 404 Not Found');
-			echo '<html><body><h1>404 Not Found</h1> The requested url "<i>'.htmlspecialchars($spath).'</i>" not found!';
-		}
+		$resp = new Response404($spath);
+		$this->processResponse($resp);
 	}
 
 	private function loadController($subpath, $controller){
@@ -138,5 +150,47 @@ class Router {
 		}
 
 		return null;
+	}
+
+	/**
+	 * @param RouteFilter|null $filter
+	 * @param string $spath
+	 * @param mixed $controller
+	 * @param array $args Arguments for controller from url template
+	 * @return bool Is route processing completed (no need to call controller's action)
+	 */
+	private function callFilterPreRoute($filter, $spath, $controller, array $args){
+		if ($filter){
+			$res = $filter->preRoute($spath, $controller, $args['action'], $args);
+			if ($res == self::COMPLETED){
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private function processResponse(Response $resp){
+		// response class handler
+		if (count($this->responseHandlers) > 0){
+			$class = new \ReflectionClass(get_class($resp));
+			do {
+				$className = $class->name;
+				if (array_key_exists($className, $this->responseHandlers)
+					&& $this->responseHandlers[$className]($resp) === true)
+				{
+					return;
+				}
+				$class = $class->getParentClass();
+			} while ($class !== null);
+		}
+
+		// status code handler
+		$code = $resp->getStatusCode();
+		if (array_key_exists($code, $this->statusHandlers) && $this->statusHandlers[$code]($resp) === true){
+			return;
+		}
+
+		$resp->send();
 	}
 }
