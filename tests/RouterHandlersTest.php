@@ -11,6 +11,7 @@ use Iassasin\Easyroute\Http\Request;
 use Iassasin\Easyroute\ServiceNotFoundException;
 use Iassasin\Easyroute\Http\Response;
 use Iassasin\Easyroute\Http\Responses\Response404;
+use Iassasin\Easyroute\Http\Responses\ResponseJson;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -21,6 +22,7 @@ use Psr\Container\ContainerInterface;
  * @covers \Iassasin\Easyroute\SimpleContainer
  * @covers \Iassasin\Easyroute\Http\Response
  * @covers \Iassasin\Easyroute\Http\Responses\Response404
+ * @covers \Iassasin\Easyroute\Http\Responses\ResponseJson
  */
 class RouterHandlersTest extends PHPUnit_Framework_TestCase {
 	private function _test(Router $router, $route, $expected){
@@ -57,7 +59,7 @@ class RouterHandlersTest extends PHPUnit_Framework_TestCase {
 		return '<html><body><h1>404 Not Found</h1> The requested url "<i>'.$url.'</i>" not found!</body></html>';
 	}
 
-	public function testStatusHandlers(){
+	public function testHandlers(){
 		$router = $this->_initRouter([
 			new Route('/{action}', ['controller' => 'handlers']),
 		]);
@@ -103,5 +105,21 @@ class RouterHandlersTest extends PHPUnit_Framework_TestCase {
 		$this->_test($router, '/', 'all 404: '.$this->get404Message('/'));
 		$this->_test($router, '/handle404', 'all 404: no content here');
 		$this->_test($router, '/handle200', "MyResponse200: handle200\nall 200: handle200");
+	}
+
+	public function testJsonHandler(){
+		$router = $this->_initRouter([
+			new Route('/{action}', ['controller' => 'handlers']),
+		]);
+
+		$router->setResponseHandler(ResponseJson::class, function(ResponseJson $resp){
+			echo 'ResponseJson: '.$resp->getContent();
+			return true;
+		});
+
+		$this->_test($router, '/', $this->get404Message('/'));
+		$this->_test($router, '/handle404', 'no content here');
+		$this->_test($router, '/handle200', 'handle200');
+		$this->_test($router, '/handleJson', 'ResponseJson: {"a":"b","c":2}');
 	}
 }

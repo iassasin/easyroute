@@ -182,7 +182,7 @@ class Router {
 					return;
 				}
 				$class = $class->getParentClass();
-			} while ($class !== null);
+			} while ($class !== false);
 		}
 
 		// status code handler
