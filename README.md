@@ -1,4 +1,7 @@
 # Easyroute
+[![PHP Version](https://img.shields.io/badge/php-%3E%3D%207.0-8892BF.svg)](https://php.net/)
+[![Build Status](https://travis-ci.org/iassasin/easyroute.svg?branch=master)](https://travis-ci.org/iassasin/easyroute)
+[![Coverage Status](https://coveralls.io/repos/github/iassasin/easyroute/badge.svg?branch=master)](https://coveralls.io/github/iassasin/easyroute?branch=master)
 
 Simple router do not require a lot of setups, install in few minutes and just works.
 
