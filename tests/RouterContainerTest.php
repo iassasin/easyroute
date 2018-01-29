@@ -13,6 +13,7 @@ use Iassasin\Easyroute\SimpleContainer;
 use Iassasin\Easyroute\ServiceNotFoundException;
 use Iassasin\Easyroute\Http\Response;
 use Iassasin\Easyroute\Http\Responses\Response404;
+use Iassasin\Easyroute\Http\Responses\Response500;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -24,6 +25,7 @@ use Psr\Container\ContainerInterface;
  * @covers \Iassasin\Easyroute\ServiceNotFoundException
  * @covers \Iassasin\Easyroute\Http\Response
  * @covers \Iassasin\Easyroute\Http\Responses\Response404
+ * @covers \Iassasin\Easyroute\Http\Responses\Response500
  */
 class RouterContainerTest extends TestCase {
 	private function _test(Router $router, $route, $expected){
@@ -72,6 +74,10 @@ class RouterContainerTest extends TestCase {
 		}
 	}
 
+	private function get500Message($msg){
+		return '<html><body><h1>500 Internal Server Error</h1> '.$msg.'</body></html>';
+	}
+
 	private function _initRouter($routes){
 		$router = new Router();
 		$router->setControllersPath(__DIR__.'/controllers/');
@@ -86,13 +92,20 @@ class RouterContainerTest extends TestCase {
 	}
 
 	public function testDIContainerServiceNotFound(){
+		$self = $this;
+		
 		$router = $this->_initRouter([
 			new Route('/{controller}/{action}/{arg}', []),
 			new Route('/{controller}/{action}', []),
 		]);
 
-		$this->expectException(ServiceNotFoundException::class);
-		$this->_test($router, 'di/req6/abc', 'di/req6');
+		$router->setResponseHandler(Response500::class, function(Response500 $resp) use ($self){
+			$self->assertEquals(get_class($resp->getException()), ServiceNotFoundException::class);
+			echo '500: '.ServiceNotFoundException::class;
+			return true;
+		});
+
+		$this->_test($router, 'di/req6/abc', '500: '.ServiceNotFoundException::class);
 	}
 
 	public function testDIContainer(){
@@ -115,16 +128,23 @@ class RouterContainerTest extends TestCase {
 	}
 
 	public function testNoAutowireContainer(){
+		$self = $this;
+
 		$router = $this->_initRouter([
 			new Route('/{controller}/{action}/{arg}', []),
 			new Route('/{controller}/{action}', []),
 		]);
 		$router->getContainer()->setAutowireEnabled(false);
 
+		$router->setResponseHandler(Response500::class, function(Response500 $resp) use ($self){
+			$self->assertEquals(get_class($resp->getException()), ServiceNotFoundException::class);
+			echo '500: '.ServiceNotFoundException::class;
+			return true;
+		});
+
 		$this->_makeDITests($router, [$this, '_test']);
 
-		$this->expectException(ServiceNotFoundException::class);
-		$this->_test($router, 'di/req7/abc', 'di/req7: abc, s2s1, s1');
+		$this->_test($router, 'di/req7/abc', '500: '.ServiceNotFoundException::class);
 	}
 
 	private function _makeDITests($router, $tester){

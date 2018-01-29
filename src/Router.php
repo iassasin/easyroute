@@ -5,6 +5,7 @@ namespace Iassasin\Easyroute;
 use Iassasin\Easyroute\Http\Request;
 use Iassasin\Easyroute\Http\Response;
 use Iassasin\Easyroute\Http\Responses\Response404;
+use Iassasin\Easyroute\Http\Responses\Response500;
 use Psr\Container\ContainerInterface;
 
 class Router {
@@ -86,45 +87,50 @@ class Router {
 	}
 
 	public function processRoute(Request $req = null){
-		if ($req === null){
-			$req = Request::createFromGlobals();
-		}
+		try {
+			if ($req === null){
+				$req = Request::createFromGlobals();
+			}
 
-		if ($this->container instanceof SimpleContainer){
-			$this->container->setService(Request::class, $req);
-		}
+			if ($this->container instanceof SimpleContainer){
+				$this->container->setService(Request::class, $req);
+			}
 
-		$spath = $req->getUri();
-		$path = Route::splitPathFromURI($spath);
+			$spath = $req->getUri();
+			$path = Route::splitPathFromURI($spath);
 
-		foreach ($this->routes as $r){
-			$filter = $r->getFilter();
-			if ($ctl = $r->match($path)){
-				$obj = $this->loadController($r->getControllersSubpath(), $ctl['controller']);
-				if ($obj !== null && method_exists($obj, $ctl['action'])){
-					if (is_callable([$obj, $ctl['action']])){
-						if ($this->callFilterPreRoute($filter, $spath, $obj, $ctl)){
-							return;
-						}
-
-						$resp = call_user_func_array([$obj, $ctl['action']], $this->createArgsFor($obj, $ctl['action'], $ctl));
-						if ($resp !== null){
-							if (!($resp instanceof Response)){
-								$resp = new Response($resp);
+			foreach ($this->routes as $r){
+				$filter = $r->getFilter();
+				if ($ctl = $r->match($path)){
+					$obj = $this->loadController($r->getControllersSubpath(), $ctl['controller']);
+					if ($obj !== null && method_exists($obj, $ctl['action'])){
+						if (is_callable([$obj, $ctl['action']])){
+							if ($this->callFilterPreRoute($filter, $spath, $obj, $ctl)){
+								return;
 							}
 
-							$this->processResponse($resp);
+							$resp = call_user_func_array([$obj, $ctl['action']], $this->createArgsFor($obj, $ctl['action'], $ctl));
+							if ($resp !== null){
+								if (!($resp instanceof Response)){
+									$resp = new Response($resp);
+								}
+
+								$this->processResponse($resp);
+							}
+
+							return;
 						}
-
-						return;
 					}
+					break;
 				}
-				break;
 			}
-		}
 
-		$resp = new Response404($spath);
-		$this->processResponse($resp);
+			$resp = new Response404($spath);
+			$this->processResponse($resp);
+		} catch (\Throwable $ex){
+			$resp = new Response500($ex);
+			$this->processResponse($resp);
+		}
 	}
 
 	private function loadController($subpath, $controller){
