@@ -5,6 +5,7 @@
  * Use for good
  */
 
+use PHPUnit\Framework\TestCase;
 use Iassasin\Easyroute\Router;
 use Iassasin\Easyroute\Route;
 use Iassasin\Easyroute\RouteFilter;
@@ -24,7 +25,7 @@ use Iassasin\Easyroute\Http\Responses\Response404;
  * @covers \Iassasin\Easyroute\Http\Response
  * @covers \Iassasin\Easyroute\Http\Responses\Response404
  */
-class RouterTest extends PHPUnit_Framework_TestCase {
+class RouterTest extends TestCase {
 	private function _test(Router $router, $route, $expected){
 		ob_start();
 		try {
