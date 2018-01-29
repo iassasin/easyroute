@@ -151,6 +151,9 @@ There is 3 built-in response classes:
 - `Response404` - extends `Request` for default http 404 error with:
   - `__construct(string $url, array $headers = [])`
   - `getUrl()` - get URL caused 404 error
+- `Response500` - extends `Request` for default http 500 error. Generated if any exception thrown during route processing.
+  - `__construct(\Throwable $exception = null, array $headers = [])`
+  - `getException()` - get exception thrown during route processing
 - `ResponseJson` - extends `Request` for sending json responses, also set correct http `Content-Type` header.
   - `__construct(object|array $data, int $statusCode = 200, array $headers = [])`
   - `getData()`, `setData(object|array $data)` - set source data to send to client
