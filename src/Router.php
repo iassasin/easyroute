@@ -14,7 +14,6 @@ class Router {
 
 	private $ctl_path = './';
 	private $routes = [];
-	private $handler404 = null;
 	private $ctl_prefix = 'Controller';
 	private $container;
 	private $statusHandlers = [];
