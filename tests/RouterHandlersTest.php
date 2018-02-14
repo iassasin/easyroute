@@ -24,6 +24,7 @@ use Psr\Container\ContainerInterface;
  * @covers \Iassasin\Easyroute\Http\Response
  * @covers \Iassasin\Easyroute\Http\Responses\Response404
  * @covers \Iassasin\Easyroute\Http\Responses\ResponseJson
+ * @covers \Iassasin\Easyroute\Path
  */
 class RouterHandlersTest extends TestCase {
 	private function _test(Router $router, $route, $expected){
@@ -62,7 +63,7 @@ class RouterHandlersTest extends TestCase {
 
 	public function testHandlers(){
 		$router = $this->_initRouter([
-			new Route('/{action}', ['controller' => 'handlers']),
+			new Route('/:action', ['controller' => 'handlers']),
 		]);
 
 		// status code handlers
@@ -110,7 +111,7 @@ class RouterHandlersTest extends TestCase {
 
 	public function testJsonHandler(){
 		$router = $this->_initRouter([
-			new Route('/{action}', ['controller' => 'handlers']),
+			new Route('/:action', ['controller' => 'handlers']),
 		]);
 
 		$router->setResponseHandler(ResponseJson::class, function(ResponseJson $resp){

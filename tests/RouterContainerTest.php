@@ -26,6 +26,7 @@ use Psr\Container\ContainerInterface;
  * @covers \Iassasin\Easyroute\Http\Response
  * @covers \Iassasin\Easyroute\Http\Responses\Response404
  * @covers \Iassasin\Easyroute\Http\Responses\Response500
+ * @covers \Iassasin\Easyroute\Path
  */
 class RouterContainerTest extends TestCase {
 	private function _test(Router $router, $route, $expected){
@@ -93,10 +94,10 @@ class RouterContainerTest extends TestCase {
 
 	public function testDIContainerServiceNotFound(){
 		$self = $this;
-		
+
 		$router = $this->_initRouter([
-			new Route('/{controller}/{action}/{arg}', []),
-			new Route('/{controller}/{action}', []),
+			new Route(':controller/:action/:arg', []),
+			new Route(':controller/:action', []),
 		]);
 
 		$router->setResponseHandler(Response500::class, function(Response500 $resp) use ($self){
@@ -110,8 +111,8 @@ class RouterContainerTest extends TestCase {
 
 	public function testDIContainer(){
 		$router = $this->_initRouter([
-			new Route('/{controller}/{action}/{arg}', []),
-			new Route('/{controller}/{action}', []),
+			new Route(':controller/:action/:arg', []),
+			new Route(':controller/:action', []),
 		]);
 
 		$this->_makeDITests($router, [$this, '_test']);
@@ -120,8 +121,8 @@ class RouterContainerTest extends TestCase {
 
 	public function testExternalDIContainer(){
 		$router = $this->_initRouter([
-			new Route('/{controller}/{action}/{arg}', []),
-			new Route('/{controller}/{action}', []),
+			new Route(':controller/:action/:arg', []),
+			new Route(':controller/:action', []),
 		]);
 
 		$this->_makeDITests($router, [$this, '_testWithDI']);
@@ -131,8 +132,8 @@ class RouterContainerTest extends TestCase {
 		$self = $this;
 
 		$router = $this->_initRouter([
-			new Route('/{controller}/{action}/{arg}', []),
-			new Route('/{controller}/{action}', []),
+			new Route(':controller/:action/:arg', []),
+			new Route(':controller/:action', []),
 		]);
 		$router->getContainer()->setAutowireEnabled(false);
 
@@ -143,7 +144,7 @@ class RouterContainerTest extends TestCase {
 		});
 
 		$this->_makeDITests($router, [$this, '_test']);
-
+	
 		$this->_test($router, 'di/req7/abc', '500: '.ServiceNotFoundException::class);
 	}
 

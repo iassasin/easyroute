@@ -24,6 +24,7 @@ use Iassasin\Easyroute\Http\Responses\Response404;
  * @covers \Iassasin\Easyroute\SimpleContainer
  * @covers \Iassasin\Easyroute\Http\Response
  * @covers \Iassasin\Easyroute\Http\Responses\Response404
+ * @covers \Iassasin\Easyroute\Path
  */
 class RouterTest extends TestCase {
 	private function _test(Router $router, $route, $expected){
@@ -63,14 +64,14 @@ class RouterTest extends TestCase {
 
 	public function testStaticRoutes(){
 		$router = $this->_initRouter([
-			new Route('/', ['controller' => 'foo', 'action' => 'index', 'arg' => null]),
+			new Route('/?', ['controller' => 'foo', 'action' => 'index', 'arg' => null]),
 		]);
 
 		$this->_test($router, '', 'foo/index: ');
 		$this->_test($router, '/', 'foo/index: ');
 
 		$router = $this->_initRouter([
-			new Route('/test/test', ['controller' => 'foo', 'action' => 'test']),
+			new Route('/?test/test', ['controller' => 'foo', 'action' => 'test']),
 		]);
 
 		$this->_test($router, 'test/test', 'foo/test');
@@ -79,8 +80,8 @@ class RouterTest extends TestCase {
 
 	public function testBasicRoutes(){
 		$router = $this->_initRouter([
-			new Route('/test/test', ['controller' => 'foo', 'action' => 'test']),
-			new Route('/{controller}/{action}/{arg}', ['controller' => 'foo', 'action' => 'index', 'arg' => null]),
+			new Route('/?test/test', ['controller' => 'foo', 'action' => 'test']),
+			new Route('/?(:controller:(/:action:(/:arg)?)?)?', ['controller' => 'foo', 'action' => 'index', 'arg' => null]),
 		]);
 
 		$this->_test($router, 'test/test', 'foo/test');
@@ -90,10 +91,8 @@ class RouterTest extends TestCase {
 		$this->_test($router, '', 'foo/index: ');
 		$this->_test($router, '/', 'foo/index: ');
 		$this->_test($router, 'foo', 'foo/index: ');
-		$this->_test($router, 'foo/', 'foo/index: ');
 		$this->_test($router, '/foo', 'foo/index: ');
-		$this->_test($router, '/foo/', 'foo/index: ');
-		$this->_test($router, 'foo/index/', 'foo/index: ');
+		$this->_test($router, 'foo/index', 'foo/index: ');
 		$this->_test($router, 'foo/index/var', 'foo/index: var');
 
 		$this->_test($router, 'bar', 'bar/index: ');
@@ -107,8 +106,8 @@ class RouterTest extends TestCase {
 
 	public function testEscapeSymbolsAndGetParams(){
 		$router = $this->_initRouter([
-			new Route('/test/test', ['controller' => 'foo', 'action' => 'test']),
-			new Route('/{controller}/{action}/{arg}', ['controller' => 'foo', 'action' => 'index', 'arg' => null]),
+			new Route('test/test', ['controller' => 'foo', 'action' => 'test']),
+			new Route(':controller/:action/:arg?', ['controller' => 'foo', 'action' => 'index', 'arg' => null]),
 		]);
 
 		$this->_test($router, 'bar/index/var%20%2F%20rav', 'bar/index: var / rav');
@@ -117,8 +116,7 @@ class RouterTest extends TestCase {
 
 	public function testRegexRoute(){
 		$router = $this->_initRouter([
-			new Route('/test/{arg}', ['controller' => 'bar', 'action' => 'index'],
-				['arg' => '/^\d+$/']),
+			new Route('test/:arg(\d+)', ['controller' => 'bar', 'action' => 'index']),
 		]);
 
 		$this->_test($router, 'foo/test', '404: foo/test');
@@ -131,7 +129,7 @@ class RouterTest extends TestCase {
 
 	public function testZonesAndFilters(){
 		$router = $this->_initRouter([
-			(new Route('/zone/{controller}/{action}/{arg}', ['controller' => 'zbar', 'action' => 'index', 'arg' => null]))
+			(new Route('zone(/:controller:(/:action:(/:arg)?)?)?', ['controller' => 'zbar', 'action' => 'index', 'arg' => null]))
 				->setControllersSubpath('zone/')
 				->setFilter(new NoTestFilter()),
 		]);

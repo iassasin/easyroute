@@ -3,105 +3,55 @@
 namespace Iassasin\Easyroute;
 
 class Route {
-	private $path;
+	private $pathrx;
+	private $varGroups;
 	private $defaults;
-	private $filters;
-	private $ctl_subpath;
-	private $route_filter;
+	private $ctlSubpath;
+	private $routeFilter;
 
-	public static function splitPathFromURI($path){
-		if ($path === ''){
-			return [''];
-		}
-
-		if ($path{0} == '/'){
-			$path = substr($path, 1);
-		}
-
-		$argspos = strpos($path, '?');
-		if ($argspos !== false){
-			$path = substr($path, 0, $argspos);
-		}
-
-		$apath = preg_split('/\/+/', $path);
-		foreach ($apath as &$p){
-			$p = urldecode($p);
-		}
-
-		return $apath;
-	}
-
-	public function __construct($path, array $defaults = [], array $filters = []){
-		$apath = self::splitPathFromURI($path);
-
-		$this->path = $apath;
+	public function __construct(string $pathrx, array $defaults = []){
 		$this->defaults = $defaults;
-		$this->filters = $filters;
-		$this->ctl_subpath = '';
-		$this->route_filter = null;
+		$this->setRegexRoute($pathrx);
+		$this->ctlSubpath = '';
+		$this->routeFilter = null;
 	}
 
-	public function setControllersSubpath($path){
-		$this->ctl_subpath = $path;
+	public function setControllersSubpath(string $path){
+		$this->ctlSubpath = $path;
 		return $this;
 	}
 
 	public function setFilter(RouteFilter $filter){
-		$this->route_filter = $filter;
+		$this->routeFilter = $filter;
 		return $this;
 	}
 
 	public function getControllersSubpath(){
-		return $this->ctl_subpath;
+		return $this->ctlSubpath;
 	}
 
 	public function getFilter(){
-		return $this->route_filter;
+		return $this->routeFilter;
 	}
 
-	public function match(array $path){
+	public function match(string $url){
+		$argspos = strpos($url, '?');
+		if ($argspos !== false){
+			$url = substr($url, 0, $argspos);
+		}
+
 		$res = $this->defaults;
 		if (!array_key_exists('controller', $res)) $res['controller'] = null;
 		if (!array_key_exists('action', $res)) $res['action'] = null;
 
-		$pcnt = count($path);
-		$rcnt = count($this->path);
-
-		if ($pcnt > $rcnt){
+		if (preg_match($this->pathrx, $url, $match) === 1){
+			foreach ($this->varGroups as $name){
+				if (array_key_exists($name, $match) && $match[$name] != ''){
+					$res[$name] = urldecode($match[$name]);
+				}
+			}
+		} else {
 			return false;
-		}
-
-		for ($i = 0; $i < $pcnt; ++$i){
-			if (strlen($this->path[$i]) > 0 && $this->path[$i]{0} == '{'){
-				$arg = substr($this->path[$i], 1, -1);
-
-				if (array_key_exists($arg, $this->filters)){
-					if (preg_match($this->filters[$arg], $path[$i]) !== 1){
-						return false;
-					}
-				}
-
-				if ($path[$i] == ''){
-					break;
-				}
-
-				$res[$arg] = $path[$i];
-			} else if ($this->path[$i] != $path[$i]){
-				return false;
-			}
-		}
-
-		if ($i < $rcnt){
-			for ( ; $i < $rcnt; ++$i){
-				if (strlen($this->path[$i]) > 0 && $this->path[$i]{0} != '{'){
-					return false;
-				}
-
-				$arg = substr($this->path[$i], 1, -1);
-				if (!array_key_exists($arg, $res)){
-					return false;
-				}
-			}
 		}
 
 		if ($res['controller'] == '' || $res['action'] == ''){
@@ -109,5 +59,11 @@ class Route {
 		}
 
 		return $res;
+	}
+
+	private function setRegexRoute(string $rx){
+		$path = Path::parse($rx);
+		$this->pathrx = $path->regex;
+		$this->varGroups = $path->varGroups;
 	}
 }

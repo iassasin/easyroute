@@ -95,8 +95,7 @@ class Router {
 				$this->container->setService(Request::class, $req);
 			}
 
-			$spath = $req->getUri();
-			$path = Route::splitPathFromURI($spath);
+			$path = $req->getUri();
 
 			foreach ($this->routes as $r){
 				$filter = $r->getFilter();
@@ -104,7 +103,7 @@ class Router {
 					$obj = $this->loadController($r->getControllersSubpath(), $ctl['controller']);
 					if ($obj !== null && method_exists($obj, $ctl['action'])){
 						if (is_callable([$obj, $ctl['action']])){
-							if ($this->callFilterPreRoute($filter, $spath, $obj, $ctl)){
+							if ($this->callFilterPreRoute($filter, $path, $obj, $ctl)){
 								return;
 							}
 
@@ -124,7 +123,7 @@ class Router {
 				}
 			}
 
-			$resp = new Response404($spath);
+			$resp = new Response404($path);
 			$this->processResponse($resp);
 		} catch (\Throwable $ex){
 			$resp = new Response500($ex);
