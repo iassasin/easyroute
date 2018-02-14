@@ -25,7 +25,7 @@ use Iassasin\Easyroute\Route;
 $router = new Router();
 $router->setControllersPath($_SERVER['DOCUMENT_ROOT'].'/controllers/');
 $router->addRoutes([
-	new Route('/{controller}/{action}/{arg}', ['controller' => 'home', 'action' => 'index', 'arg' => null]),
+	new Route('/(:controller:(/:action:(/:arg)?)?)?', ['controller' => 'home', 'action' => 'index', 'arg' => null]),
 ]);
 $router->processRoute();
 ```
@@ -51,9 +51,29 @@ class ControllerHome {
 
 That's it!
 
-Note that file name must match `{controller}` name from URL template and controller class name must match `{controller}` name with prefix `Controller`. In example above route `/home/index` matches file `controllers/home.php` and class `ControllerHome`.
+Note that file name must match `:controller` name from URL template and controller class name must match `:controller` name with prefix `Controller`. In example above route `/home/index` matches file `controllers/home.php` and class `ControllerHome`.
 
 ## Useful features
+
+### Route with parameters
+
+Route is a regex string with simpler syntax for naming route arguments. For example:
+
+- `/:controller/:action/:arg` (all parameters are required)
+- `/(foo|bar)-:arg/gotcha` (regex and partial parameter matching. Valid are `/foo-123/gotcha`, `/bar-qwerty/gotcha`, but not `/qwerty/gotcha`)
+- `/:arg?` (parameter `arg` can be ommited, but not `/`. Valid are `/`, `/param`, but not `/sub/param`)
+- `/(:controller:(/:action:(/:arg)?)?)?` (all parameters not required. Valid are `/`, `/home`, `/home/index/val`, but not `/home/`, `/home/index/`)
+
+Parameter name must match regex `[a-zA-Z_0-9]+`.  
+By default `:parameter` match regex `[^\/]+`, but you can use your own filter:
+
+```php
+new Route('/:arg(\d+)?', // arg not required and can contains only numerics
+	['controller' => 'home', 'action' => 'index', 'arg' => null], // default values
+)
+```
+
+If you need to use `(` to match group, but not to filter parameter, use trailing `:` in parameter name: `/:controller:(postfix1|postfix2)` will match `/homepostfix1` with `controller = 'home'`.
 
 ### Built-in simple dependency injection container
 
@@ -189,23 +209,12 @@ $router->setStatusHandler(302, function(Response $resp){
 >
 > Note 2: you can set handler for parent response class to match all childs, child handlers will be always called first: from most child to first parent. So, you can match **all** responses setting handler for `Response::class`.
 
-### Parameters filter
-
-To filter matching parameters in URL template you can use regular expressions:
-
-```php
-new Route('/{arg}',
-	['controller' => 'home', 'action' => 'index'], // default values
-	['arg' => '/^\d+$/'] // arg can contains only numerics
-)
-```
-
 ### Subdirectories for controllers
 
 Separate zones with subdirectories:
 
 ```php
-(new Route('/admin/{controller}/{action}', ['action' => 'index']))
+(new Route('/admin/:controller/:action?', ['action' => 'index']))
 	->setControllersSubpath('zones/admin')
 	// '/admin/home/index' will match 'controllers/zones/admin/home.php'
 	// and class 'ControllerHome'
@@ -229,7 +238,7 @@ class RouteFilterAdmin extends RouteFilter {
 	}
 }
 //...
-(new Route('/admin/{controller}/{action}', ['action' => 'index']))
+(new Route('/admin/:controller/:action?', ['action' => 'index']))
 	->setFilter(new RouteFilterAdmin())
 ```
 
