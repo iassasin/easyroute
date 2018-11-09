@@ -149,7 +149,7 @@ class Router {
 		include_once $cp;
 
 		if (class_exists($cn, false)){
-			$obj = new $cn;
+			$obj = SimpleContainer::createInstance($this->container, $cn);
 			return $obj;
 		}
 

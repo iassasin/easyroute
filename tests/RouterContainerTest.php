@@ -89,6 +89,10 @@ class RouterContainerTest extends TestCase {
 			return true;
 		});
 
+		$router->setResponseHandler(Response500::class, function(Response500 $resp){
+			throw $resp->getException();
+		});
+
 		return $router;
 	}
 
@@ -144,7 +148,7 @@ class RouterContainerTest extends TestCase {
 		});
 
 		$this->_makeDITests($router, [$this, '_test']);
-	
+
 		$this->_test($router, 'di/req7/abc', '500: '.ServiceNotFoundException::class);
 	}
 
@@ -165,8 +169,9 @@ class ExternalContainer implements ContainerInterface {
 	}
 
 	public function get($id){
-		if ($id == Request::class)
+		if ($id == Request::class) {
 			return $this->request;
+		}
 
 		throw new ServiceNotFoundException();
 	}

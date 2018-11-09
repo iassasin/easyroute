@@ -2,7 +2,9 @@
 
 namespace Iassasin\Easyroute;
 
-class SimpleContainer implements \Psr\Container\ContainerInterface {
+use \Psr\Container\ContainerInterface;
+
+class SimpleContainer implements ContainerInterface {
 	protected $services;
 	protected $autowireEnabled;
 
@@ -22,7 +24,7 @@ class SimpleContainer implements \Psr\Container\ContainerInterface {
 		if ($this->autowireEnabled && class_exists($id)){
 			// recursion dependency break
 			$this->services[$id] = null;
-			$obj = $this->createInstance($id);
+			$obj = static::createInstance($this, $id);
 			$this->services[$id] = $obj;
 			return $obj;
 		}
@@ -54,8 +56,13 @@ class SimpleContainer implements \Psr\Container\ContainerInterface {
 		$this->services[$id] = $service;
 	}
 
-	protected function createInstance($id){
-		$class = new \ReflectionClass($id);
+	/**
+	 * Create instance of class and resolve all dependencies for it
+	 * @param string $class class name
+	 * @return mixed new instance of class
+	 */
+	public static function createInstance(ContainerInterface $container, $class){
+		$class = new \ReflectionClass($class);
 		$ctor = $class->getConstructor();
 
 		if ($ctor === null){
@@ -67,10 +74,10 @@ class SimpleContainer implements \Psr\Container\ContainerInterface {
 		foreach ($params as $param){
 			$pclass = $param->getClass();
 			if ($pclass === null){
-				throw new ServiceNotFoundException("Service ${id} requires unknown dependency \$".$param->name);
+				throw new ServiceNotFoundException("Service ${class} requires unknown dependency \$".$param->name);
 			}
 
-			$args[$param->getPosition()] = $this->get($pclass->name);
+			$args[$param->getPosition()] = $container->get($pclass->name);
 		}
 
 		return $class->newInstanceArgs($args);
